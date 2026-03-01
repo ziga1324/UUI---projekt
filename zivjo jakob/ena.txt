@@ -1,5 +1,6 @@
 hahahaha
 
+<<<<<<< HEAD
 git checkout main
 
 git pull origin main
@@ -10,3 +11,6 @@ git commit -m "enaneaaena"
 
 git push origin main
 
+=======
+hihihiha
+>>>>>>> 6e86516923391668c93772195b9b9094c577777a
