@@ -1,1 +1,12 @@
 hahahaha
+
+git checkout main
+
+git pull origin main
+
+git add .
+
+git commit -m "enaneaaena"
+
+git push origin main
+
