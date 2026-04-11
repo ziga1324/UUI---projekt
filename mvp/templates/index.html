@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZestQuest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+/* ─── CSS Variables ─────────────────────────────────────── */
+:root {
+  --bg:        #0a0a0f;
+  --bg2:       #111118;
+  --bg3:       #1a1a24;
+  --border:    rgba(255,255,255,0.07);
+  --text:      #e8e8f0;
+  --muted:     #6b6b80;
+  --accent:    #c8f050;
+  --accent2:   #50f0c8;
+  --accent3:   #f05080;
+  --card-glow: rgba(200, 240, 80, 0.06);
+  --radius:    16px;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+/* ─── Reset & Base ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* ─── Noise grain overlay ───────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.4;
+}
+
+/* ─── Background orbs ───────────────────────────────────── */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+  animation: drift 20s ease-in-out infinite alternate;
+}
+.orb-1 { width: 600px; height: 600px; background: rgba(200,240,80,0.04); top: -200px; right: -100px; }
+.orb-2 { width: 500px; height: 500px; background: rgba(80,240,200,0.03); bottom: -100px; left: -100px; animation-delay: -10s; }
+@keyframes drift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(40px,30px) scale(1.1); } }
+
+/* ─── Layout ────────────────────────────────────────────── */
+.app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+/* ─── Header ────────────────────────────────────────────── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 32px 0 48px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+  animation: fadeDown 0.6s ease both;
+}
+.logo {
+  font-family: var(--font-head); font-size: 1.6rem; font-weight: 800;
+  letter-spacing: -0.04em; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }
+
+/* ─── Stats bar ─────────────────────────────────────────── */
+.stats {
+  display: flex; gap: 8px;
+  animation: fadeDown 0.6s 0.1s ease both;
+}
+.stat {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 14px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.78rem; color: var(--muted);
+  transition: border-color 0.3s, color 0.3s;
+}
+.stat:hover { border-color: rgba(200,240,80,0.2); color: var(--text); }
+.stat-val { font-family: var(--font-head); font-weight: 700; color: var(--accent); font-size: 0.95rem; }
+
+/* ─── Section titles ────────────────────────────────────── */
+.section-label {
+  font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ─── Preference Form ───────────────────────────────────── */
+.form-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 32px;
+  margin-bottom: 32px;
+  animation: fadeUp 0.6s 0.2s ease both;
+  transition: border-color 0.3s;
+}
+.form-card:hover { border-color: rgba(200,240,80,0.1); }
+
+.form-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px; margin-bottom: 28px;
+}
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+select {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 14px;
+  border-radius: 10px; font-family: var(--font-mono); font-size: 0.85rem;
+  cursor: pointer; outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b80' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px;
+}
+select:focus { border-color: rgba(200,240,80,0.4); background-color: var(--bg); }
+select option { background: var(--bg2); }
+
+/* ─── Main CTA button ───────────────────────────────────── */
+.btn-quest {
+  width: 100%; padding: 18px;
+  background: var(--accent); color: #0a0a0f;
+  border: none; border-radius: 12px;
+  font-family: var(--font-head); font-size: 1.05rem; font-weight: 700;
+  letter-spacing: 0.02em; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+  position: relative; overflow: hidden;
+}
+.btn-quest::before {
+  content: '';position:absolute;inset:0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 100%);
+  opacity: 0; transition: opacity 0.2s;
+}
+.btn-quest:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,240,80,0.3); }
+.btn-quest:hover::before { opacity: 1; }
+.btn-quest:active { transform: translateY(0); }
+.btn-quest:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ─── Quest Result Card ─────────────────────────────────── */
+#result-section { display: none; animation: fadeUp 0.5s ease both; }
+
+.quest-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 40px;
+  position: relative; overflow: hidden;
+  margin-bottom: 24px;
+}
+.quest-card::before {
+  content: '';position:absolute;inset:0;
+  background: var(--card-glow);
+  pointer-events: none;
+}
+.quest-card-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+.quest-icon {
+  width: 64px; height: 64px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; flex-shrink: 0;
+}
+.quest-meta { flex: 1; }
+.quest-category {
+  font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 6px;
+}
+.quest-title {
+  font-family: var(--font-head); font-size: 1.6rem; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1.2; color: var(--text);
+}
+.quest-desc {
+  color: var(--muted); font-size: 0.9rem; line-height: 1.7;
+  margin-bottom: 28px; max-width: 600px;
+}
+.quest-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 0.75rem; font-family: var(--font-mono);
+  border: 1px solid var(--border); color: var(--muted);
+}
+.chip.xp { border-color: rgba(200,240,80,0.3); color: var(--accent); background: rgba(200,240,80,0.06); }
+.chip.time { border-color: rgba(80,240,200,0.3); color: var(--accent2); background: rgba(80,240,200,0.06); }
+
+/* ─── Quest action buttons ──────────────────────────────── */
+.quest-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-opravi {
+  padding: 14px; border-radius: 12px;
+  background: var(--accent); color: #0a0a0f;
+  font-family: var(--font-head); font-weight: 700; font-size: 0.95rem;
+  border: none; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.btn-opravi:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(200,240,80,0.25); }
+.btn-preskoci {
+  padding: 14px; border-radius: 12px;
+  background: transparent; color: var(--muted);
+  font-family: var(--font-head); font-weight: 600; font-size: 0.95rem;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, transform 0.15s;
+}
+.btn-preskoci:hover { border-color: rgba(240,80,128,0.4); color: var(--accent3); transform: translateY(-2px); }
+
+/* ─── AI Confidence bars ────────────────────────────────── */
+.ai-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  margin-bottom: 24px;
+}
+.ai-title { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+.conf-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.conf-label { width: 120px; font-size: 0.8rem; color: var(--muted); flex-shrink: 0; }
+.conf-bar-wrap { flex: 1; background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+.conf-bar { height: 100%; border-radius: 4px; background: var(--accent); transition: width 1s cubic-bezier(0.23,1,0.32,1); }
+.conf-bar.top { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.conf-pct { width: 44px; text-align: right; font-size: 0.78rem; color: var(--muted); }
+
+/* ─── XP Toast ──────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 32px; right: 32px;
+  background: var(--accent); color: #0a0a0f;
+  padding: 14px 22px; border-radius: 12px;
+  font-family: var(--font-head); font-weight: 700; font-size: 1rem;
+  box-shadow: 0 8px 30px rgba(200,240,80,0.4);
+  transform: translateY(80px); opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.23,1,0.32,1), opacity 0.3s;
+  z-index: 1000; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ─── Loading spinner ───────────────────────────────────── */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(10,10,15,0.3);
+  border-top-color: rgba(10,10,15,0.9);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  vertical-align: middle; margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Animations ────────────────────────────────────────── */
+@keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeUp   { from { opacity:0; transform:translateY(20px);  } to { opacity:1; transform:translateY(0); } }
+
+/* ─── Streak display ────────────────────────────────────── */
+.streak-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 32px; font-size: 0.83rem; color: var(--muted);
+  animation: fadeUp 0.6s 0.35s ease both;
+}
+.streak-fire { font-size: 1.1rem; }
+.streak-num { font-family: var(--font-head); font-weight: 800; color: #f0a050; font-size: 1.1rem; }
+
+/* ─── Responsive ────────────────────────────────────────── */
+@media (max-width: 600px) {
+  header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .quest-actions { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .quest-title { font-size: 1.3rem; }
+  .quest-card { padding: 24px; }
+  .stats { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="app">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span class="logo-dot"></span>
+      ZestQuest
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span>⚡</span>
+        <span id="stat-xp" class="stat-val">{{ xp }}</span>
+        <span>XP</span>
+      </div>
+      <div class="stat">
+        <span>🔥</span>
+        <span id="stat-streak" class="stat-val">{{ streak }}</span>
+        <span>streak</span>
+      </div>
+      <div class="stat">
+        <span>✓</span>
+        <span id="stat-done" class="stat-val">{{ opravljeni }}</span>
+        <span>questov</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Streak bar -->
+  <div class="streak-bar">
+    <span class="streak-fire">🔥</span>
+    <span>Trenutni streak:</span>
+    <span id="streak-display" class="streak-num">{{ streak }}</span>
+    <span>dni zapored</span>
+    <span style="margin-left:auto; font-size:0.72rem;">Povprečen quest: 5–20 min</span>
+  </div>
+
+  <!-- Form -->
+  <div class="section-label">Kako se počutiš zdaj?</div>
+
+  <div class="form-card">
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Razpoloženje</label>
+        <select id="razpolozenje">
+          <option value="dolgcas">😐 Dolgčas</option>
+          <option value="vesel">😄 Vesel/a</option>
+          <option value="utrujen">😴 Utrujen/a</option>
+          <option value="motiviran">💪 Motiviran/a</option>
+          <option value="stresen">😤 Stresen/a</option>
+          <option value="umirjen">🧘 Umirjen/a</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Energija</label>
+        <select id="energija">
+          <option value="nizka">🔋 Nizka</option>
+          <option value="srednja" selected>⚡ Srednja</option>
+          <option value="visoka">🚀 Visoka</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Kje si?</label>
+        <select id="lokacija">
+          <option value="doma" selected>🏠 Doma</option>
+          <option value="v_mestu">🏙️ V mestu</option>
+          <option value="v_naravi">🌿 V naravi</option>
+          <option value="v_soli">🎒 V šoli</option>
+          <option value="na_delu">💼 Na delu</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>S kom si?</label>
+        <select id="skupina">
+          <option value="sam" selected>🙋 Sam/a</option>
+          <option value="z_enim">👫 Z enim</option>
+          <option value="skupina">👥 Skupina</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Čas razpoložljiv</label>
+        <select id="cas_razpolozljiv">
+          <option value="do_5min">⏱ Do 5 min</option>
+          <option value="5_15min" selected>⏱ 5–15 min</option>
+          <option value="15_30min">⏱ 15–30 min</option>
+          <option value="30_60min">⏱ 30–60 min</option>
+          <option value="vec_kot_uro">⏱ Več kot uro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Osebnost</label>
+        <select id="osebnost">
+          <option value="introvert">🌙 Introvert</option>
+          <option value="ambivert" selected>☯️ Ambivert</option>
+          <option value="ekstrovert">☀️ Ekstrovert</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Vreme</label>
+        <select id="vreme">
+          <option value="soncno">☀️ Sončno</option>
+          <option value="oblacno" selected>☁️ Oblačno</option>
+          <option value="dezevno">🌧️ Deževno</option>
+          <option value="snezno">❄️ Snežno</option>
+          <option value="vetrovmo">💨 Vetrovmo</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Del dneva</label>
+        <select id="cas_dneva">
+          <option value="jutro">🌅 Jutro</option>
+          <option value="dopoldne">🌤 Dopoldne</option>
+          <option value="popoldne" selected>🌇 Popoldne</option>
+          <option value="vecer">🌆 Večer</option>
+          <option value="noc">🌙 Noč</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-quest" id="btn-najdi" onclick="najdiQuest()">
+      Najdi moj quest →
+    </button>
+  </div>
+
+  <!-- Result -->
+  <div id="result-section">
+    <div class="section-label">Tvoj quest</div>
+
+    <div class="quest-card" id="quest-card">
+      <div class="quest-card-header">
+        <div class="quest-icon" id="quest-icon">🎯</div>
+        <div class="quest-meta">
+          <div class="quest-category" id="quest-category">—</div>
+          <div class="quest-title" id="quest-title">—</div>
+        </div>
+      </div>
+      <div class="quest-desc" id="quest-desc">—</div>
+      <div class="quest-chips">
+        <span class="chip time" id="quest-cas">— min</span>
+        <span class="chip xp" id="quest-xp">— XP</span>
+      </div>
+    </div>
+
+    <div class="quest-actions" style="margin-bottom:24px;">
+      <button class="btn-opravi" id="btn-opravi" onclick="opraviQuest()">✓ Opravljeno!</button>
+      <button class="btn-preskoci" onclick="preskoči()">↺ Preskočí</button>
+    </div>
+
+    <!-- AI confidence -->
+    <div class="ai-card">
+      <div class="ai-title">AI — zaupanje modela (Gradient Boosting)</div>
+      <div id="conf-bars"></div>
+    </div>
+  </div>
+</div>
+
+<!-- XP Toast -->
+<div class="toast" id="toast"></div>
+
+<div class="section-label">Hitri predlogi questov</div>
+
+<div id="static-quests" class="form-card"></div>
+
+<script>
+/* =========================
+   GLOBAL STATE
+========================= */
+let trenutniQuest = null;
+
+const CURRENT_USER = {
+  id: window.USER_ID || 1,
+  username: window.USERNAME || "Guest"
+};
+
+const IKONE = {
+  kreativno: '🎨',
+  gibanje: '⚡',
+  socialno: '💬',
+  ucenje: '📚',
+  sprostitev: '🌿',
+  pustolovscina: '🧭'
+};
+
+/* =========================
+   USER STATS
+========================= */
+async function naloziUserStat() {
+  try {
+    const res = await fetch('/api/user-stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: CURRENT_USER.id })
+    });
+
+    const data = await res.json();
+    if (!res.ok) return;
+
+    document.getElementById('stat-xp').textContent = data.xp;
+    document.getElementById('stat-streak').textContent = data.streak;
+    document.getElementById('stat-done').textContent = data.opravljeni;
+    document.getElementById('streak-display').textContent = data.streak;
+
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+/* =========================
+   QUESTI (STATIC + TEST)
+========================= */
+const STATIC_QUESTS = [
+  { naslov: "Pojdi 10 min na sprehod", xp: 10, ikona: "🚶" },
+  { naslov: "Napiši 5 stvari za katere si hvaležen", xp: 15, ikona: "🧠" },
+  { naslov: "Pospravi mizo", xp: 8, ikona: "🧹" },
+];
+
+function renderStaticQuests() {
+  const box = document.getElementById("static-quests");
+  if (!box) return;
+
+  box.innerHTML = STATIC_QUESTS.map(q => `
+    <div style="padding:12px;border:1px solid #222;border-radius:10px;margin-bottom:10px">
+      <div>${q.ikona} ${q.naslov}</div>
+      <button onclick="quickComplete(${q.xp})">+${q.xp} XP</button>
+    </div>
+  `).join("");
+}
+
+/* =========================
+   AI QUEST
+========================= */
+async function najdiQuest() {
+  const btn = document.getElementById('btn-najdi');
+  btn.disabled = true;
+
+  const vhod = {
+    user_id: CURRENT_USER.id,
+    razpolozenje: document.getElementById('razpolozenje').value,
+    energija: document.getElementById('energija').value,
+    lokacija: document.getElementById('lokacija').value,
+    skupina: document.getElementById('skupina').value,
+    cas_razpolozljiv: document.getElementById('cas_razpolozljiv').value,
+    osebnost: document.getElementById('osebnost').value,
+    vreme: document.getElementById('vreme').value,
+    cas_dneva: document.getElementById('cas_dneva').value
+  };
+
+  try {
+    const res = await fetch('/api/napovej', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(vhod),
+    });
+
+    const data = await res.json();
+    if (!data.ok) throw new Error("napaka");
+
+    trenutniQuest = data;
+    prikaziQuest(data);
+
+  } catch (e) {
+    prikaziToast("Napaka pri questu", "#f05080");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* =========================
+   SHOW QUEST
+========================= */
+function prikaziQuest(data) {
+  document.getElementById('quest-icon').textContent = data.ikona;
+  document.getElementById('quest-category').textContent = data.kategorija;
+  document.getElementById('quest-title').textContent = data.quest.naslov;
+  document.getElementById('quest-desc').textContent = data.quest.opis;
+  document.getElementById('quest-cas').textContent = data.quest.cas;
+  document.getElementById('quest-xp').textContent = data.quest.xp;
+
+  document.getElementById('result-section').style.display = 'block';
+}
+
+/* =========================
+   COMPLETE QUEST
+========================= */
+async function opraviQuest() {
+  if (!trenutniQuest) return;
+
+  const xp = trenutniQuest.quest.xp;
+
+  try {
+    const res = await fetch('/api/opravi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: CURRENT_USER.id,
+        xp
+      })
+    });
+
+    const data = await res.json();
+
+    document.getElementById('stat-xp').textContent = data.xp_skupaj;
+    document.getElementById('stat-streak').textContent = data.streak;
+    document.getElementById('stat-done').textContent = data.opravljeni;
+
+    trenutniQuest = null;
+    document.getElementById('result-section').style.display = 'none';
+
+    prikaziToast("+" + xp + " XP");
+
+  } catch (e) {
+    prikaziToast("Napaka", "#f05080");
+  }
+}
+
+/* =========================
+   QUICK COMPLETE
+========================= */
+async function quickComplete(xp) {
+  await fetch('/api/opravi', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: CURRENT_USER.id, xp })
+  });
+
+  prikaziToast("+" + xp + " XP");
+}
+
+/* =========================
+   SKIP
+========================= */
+async function preskoči() {
+  await fetch('/api/preskoci', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: CURRENT_USER.id })
+  });
+
+  trenutniQuest = null;
+  document.getElementById('result-section').style.display = 'none';
+  prikaziToast("preskočeno");
+}
+
+/* =========================
+   TOAST
+========================= */
+function prikaziToast(msg, color="#c8f050") {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* =========================
+   INIT
+========================= */
+naloziUserStat();
+renderStaticQuests();
+</script>
+</body>
+</html>
